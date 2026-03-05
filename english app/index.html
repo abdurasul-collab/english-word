@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Игра: Найди пару слов</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Английские слова">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
+    .grid { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+    .column { display: flex; flex-direction: column; gap: 10px; }
+    .word-block { display: flex; align-items: center; gap: 5px; }
+    button { padding: 10px; font-size: 16px; cursor: pointer; }
+    .selected { background-color: lightblue; }
+  </style>
+</head>
+<body>
+  <h1>Найди пары слов</h1>
+  <p>Выберите слово на русском и его перевод на английском</p>
+
+  <div class="grid">
+    <div class="column" id="russian"></div>
+    <div class="column" id="english"></div>
+  </div>
+
+  <button onclick="checkPairs()">Проверить</button>
+  <p id="result"></p>
+
+  <script>
+    const words = [
+      {ru: "стол", en: "table"},
+      {ru: "стул", en: "chair"},
+      {ru: "окно", en: "window"},
+      {ru: "дверь", en: "door"},
+      {ru: "книга", en: "book"}
+    ];
+
+    let selectedRu = null;
+    let selectedEn = null;
+    let pairs = [];
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function render() {
+      const ruCol = document.getElementById("russian");
+      const enCol = document.getElementById("english");
+      ruCol.innerHTML = "";
+      enCol.innerHTML = "";
+
+      shuffle(words).forEach(w => {
+        const btn = document.createElement("button");
+        btn.textContent = w.ru;
+        btn.onclick = () => selectRu(w.ru, btn);
+        ruCol.appendChild(btn);
+      });
+
+      shuffle(words).forEach(w => {
+        const block = document.createElement("div");
+        block.className = "word-block";
+
+        const btn = document.createElement("button");
+        btn.textContent = w.en;
+        btn.onclick = () => selectEn(w.en, btn);
+
+        const speakBtn = document.createElement("button");
+        speakBtn.textContent = "🔊";
+        speakBtn.onclick = () => speakWord(w.en);
+
+        block.appendChild(btn);
+        block.appendChild(speakBtn);
+        enCol.appendChild(block);
+      });
+    }
+
+    function selectRu(word, btn) {
+      selectedRu = word;
+      document.querySelectorAll("#russian button").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    }
+
+    function selectEn(word, btn) {
+      selectedEn = word;
+      document.querySelectorAll("#english button").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      if (selectedRu && selectedEn) {
+        pairs.push({ru: selectedRu, en: selectedEn});
+        selectedRu = null;
+        selectedEn = null;
+        document.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
+      }
+    }
+
+    function checkPairs() {
+      let correct = 0;
+      pairs.forEach(p => {
+        const match = words.find(w => w.ru === p.ru && w.en === p.en);
+        if (match) correct++;
+      });
+      document.getElementById("result").textContent = `Правильных пар: ${correct} из ${words.length}`;
+    }
+
+    function speakWord(word) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = "en-US";
+      speechSynthesis.speak(utterance);
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+
+    render();
+  </script>
+</body>
+</html>
